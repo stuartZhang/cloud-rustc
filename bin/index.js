@@ -5,7 +5,9 @@ const chalk = require('chalk');
 const {program} = require('./parseArgs');
 const {linkModules, writeResultFile} = require('./link-rs');
 const cloud = require('./cloud-end');
+const checkVer = require('./check-version');
 (async () => {
+    await checkVer();
     let rsFilePath = program.entry;
     if (!path.isAbsolute(rsFilePath)) {
         rsFilePath = path.resolve(rsFilePath);

@@ -1,10 +1,17 @@
 {
     "name": "cloud-rustc",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "从 crate 入口 rust 文件开始，分析 module 之间的层级关系，连接关联的多个 rust 文件成为一个 rust 文件。再把被连接在一起的单个 rust 文件发送给 https://play.rust-lang.org/execute 进行编译。最后，显示后端返回的内容。",
     "author": "stuart zhang<stuartpage@qq.com>",
     "license": "ISC",
     "main": "bin/index.js",
+    "keywords": [
+        "rustc",
+        "cloud",
+        "rust",
+        "cargo",
+        "wasm"
+    ],
     "bin": {
         "cloud-rustc": "bin/index.js"
     },
@@ -19,7 +26,8 @@
         "chalk": "^4.1.0",
         "commander": "^6.1.0",
         "debug": "^4.2.0",
-        "fs-extra": "^9.0.1"
+        "fs-extra": "^9.0.1",
+        "semver": "^7.3.2"
     },
     "devDependencies": {
         "eslint": "^7.0.0",
