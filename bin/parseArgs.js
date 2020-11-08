@@ -27,22 +27,22 @@ program.option('-ed, --edition [edition]', `rustc 编译器大版本号：${vers
 }, versions[0]);
 program.option('-bt, --back-trace', '在错误信息中，显示详细的函数调用栈', false);
 program.option('-o, --output-file [file]', '输出编译结果至文件');
-program.command('run').description('cargo run').action(() => {
+program.command('run').description('功能等同于 cargo run').action(() => {
     program.crateType = 'bin';
     program.tests = false;
     program.cloudActionType = 'execute';
 });
-program.command('build').description('cargo build').action(() => {
+program.command('build').description('功能等同于 cargo build').action(() => {
     program.crateType = 'lib';
     program.tests = false;
     program.cloudActionType = 'execute';
 });
-program.command('test').description('cargo test').action(() => {
+program.command('test').description('功能等同于 cargo test').action(() => {
     program.crateType = 'lib';
     program.tests = true;
     program.cloudActionType = 'execute';
 });
-program.command('wasm').description('cargo wasm').action(() => {
+program.command('wasm').description('编译生成 WEB 字节码文件').action(() => {
     program.crateType = 'bin';
     program.tests = false;
     program.cloudActionType = 'execute';
@@ -51,7 +51,7 @@ program.command('wasm').description('cargo wasm').action(() => {
     program.processAssembly = 'filter';
     program.target = 'wasm';
 });
-program.command('asm').description('cargo wasm').action(() => {
+program.command('asm').description('编译生成字节码文件').action(() => {
     program.crateType = 'bin';
     program.tests = false;
     program.cloudActionType = 'execute';
@@ -60,7 +60,7 @@ program.command('asm').description('cargo wasm').action(() => {
     program.processAssembly = 'filter';
     program.target = 'asm';
 });
-program.command('mir').description('cargo wasm').action(() => {
+program.command('mir').description('编译生成 MIR 文件').action(() => {
     program.crateType = 'bin';
     program.tests = false;
     program.cloudActionType = 'execute';
@@ -69,7 +69,7 @@ program.command('mir').description('cargo wasm').action(() => {
     program.processAssembly = 'filter';
     program.target = 'mir';
 });
-program.command('llvm-ir').description('cargo wasm').action(() => {
+program.command('llvm-ir').description('编译生成 LLVM-IR 文件').action(() => {
     program.crateType = 'bin';
     program.tests = false;
     program.cloudActionType = 'execute';

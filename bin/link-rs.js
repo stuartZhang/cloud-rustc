@@ -9,13 +9,8 @@ const padLeft = ' '.repeat(4);
 
 Object.assign(exports, {linkModules, readRsFile, writeResultFile});
 
-async function linkModules(rsFilePath, rsFile){
-    if (!rsFilePath && !rsFile) {
-        throw new Error('rust 源文件不能是空');
-    }
-    if (rsFilePath && !rsFile) {
-        rsFile = await readRsFile(rsFilePath);
-    }
+async function linkModules(rsFilePath){
+    const rsFile = await readRsFile(rsFilePath);
     const pubModPatten = /^(\s*(?:pub\s+)?)mod\s+([^;\n]+)\s*;\s*$/umg;
     const modules = [];
     let match;
@@ -40,16 +35,33 @@ async function linkModules(rsFilePath, rsFile){
     for (const {prefix, startIndex, endIndex, name} of modules) {
         const str1 = linkedRsFile.substring(0, startIndex);
         const str2 = linkedRsFile.substring(endIndex);
-        const rsFilePath = path.join(rsFileDir, `${name}.rs`);
-        logInfo(chalk.blueBright(`内联模块文件：${rsFilePath}`));
-        const rsFile = await readRsFile(rsFilePath);
+        const rsDirPath = path.join(rsFileDir, name);
+        let rsFilePath = `${rsDirPath}.rs`;
+        const isValidRsDir = await fs.pathExists(rsDirPath) && (await fs.stat(rsDirPath)).isDirectory();
+        let isValidRsFile = await fs.pathExists(rsFilePath) && (await fs.stat(rsFilePath)).isFile();
+        let rsFile;
+        if (isValidRsDir && isValidRsFile) {
+            throw new Error(`不能区分 ${name} 是文件模块，还是目录模块`);
+        } else if (isValidRsFile) {
+            logInfo(chalk.blueBright(`内联模块文件：${rsFilePath}`));
+            rsFile = await linkModules(rsFilePath);
+        } else if (isValidRsDir) {
+            rsFilePath = path.join(rsFileDir, 'mod.rs');
+            isValidRsFile = await fs.pathExists(rsFilePath) && (await fs.stat(rsFilePath)).isFile();
+            if (isValidRsFile) {
+                logInfo(chalk.blueBright(`内联模块目录：${rsFilePath}`));
+                rsFile = await linkModules(rsFilePath);
+            } else {
+                throw new Error(`在【模块目录 - ${rsFileDir}】内没有 mod.rs 文件`);
+            }
+        }
         linkedRsFile = `${str1}${[
             `${prefix}mod ${name} {`,
             rsFile.split('\n').map(line => `${prefix}${padLeft}${line}`).join('\n'),
             '}'
         ].join('\n')}\n${str2}`;
     }
-    return linkModules(rsFilePath, linkedRsFile);
+    return linkedRsFile;
 }
 async function readRsFile(rsFilePath){
     if (!await fs.pathExists(rsFilePath)) {
