@@ -6,6 +6,7 @@ module.exports = {
         'minxing/eslint-config-node8x.js'
     ],
     rules: {
+        'no-param-reassign': 'off',
         'no-process-exit': 'off',
         'no-console': 'off',
         'template-curly-spacing': 'off',

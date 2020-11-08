@@ -6,16 +6,19 @@
     "configurations": [{
         "type": "node",
         "request": "launch",
-        "console": "integratedTerminal",
+        "console": "internalConsole",
         "name": "cloud-rustc",
-        "program": "${workspaceRoot}/index.js",
+        "program": "${workspaceRoot}/bin/index.js",
         "runtimeArgs": [
             "--preserve-symlinks-main"
         ],
         "env": {
-            "DEBUG": ""
+            "DEBUG": "cloud-rustc:info"
         },
         "args": [
+            "run",
+            "-e",
+            "rust-samples\\sm4_like\\mod.rs"
         ]
     }]
 }
