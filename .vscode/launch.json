@@ -18,7 +18,7 @@
         "args": [
             "run",
             "-e",
-            "rust-samples\\sm4_like\\mod.rs"
+            "rust-samples\\sm4_like.rs"
         ]
     }]
 }

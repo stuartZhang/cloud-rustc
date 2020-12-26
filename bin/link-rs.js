@@ -11,54 +11,65 @@ Object.assign(exports, {linkModules, readRsFile, writeResultFile});
 
 async function linkModules(rsFilePath){
     const rsFile = await readRsFile(rsFilePath);
-    const pubModPatten = /^(\s*(?:pub\s+)?)mod\s+([^;\n]+)\s*;\s*$/umg;
+    const pubModPatten = /^\s*#\[\s*path\s*=\s*"([^"]+)"\s*\]\s*$|^(\s*(?:pub\s+)?)mod\s+([^;\n]+)\s*;\s*$/umg;
     const modules = [];
-    let match;
+    let fileName, match;
     while (Array.isArray(match = pubModPatten.exec(rsFile))) {
-        let endIndex = match.index + match[0].length;
-        if (endIndex < rsFile.length - 1) {
-            endIndex += 1;
+        if (/^\s*#\[\s*path\s*=\s*"([^"]+)"\s*\]\s*$/u.test(match[0])) {
+            fileName = match[1].replace(/\.rs\s*$/u, '');
+        } else if (/^(\s*(?:pub\s+)?)mod\s+([^;\n]+)\s*;\s*$/u.test(match[0])) {
+            let endIndex = match.index + match[0].length;
+            if (endIndex < rsFile.length - 1) {
+                endIndex += 1;
+            }
+            modules.push({
+                visibility: match[2],
+                startIndex: match.index,
+                endIndex,
+                identifier: match[3],
+                fileName: fileName || match[3]
+            });
+            fileName = null;
         }
-        modules.push({
-            prefix: match[1],
-            startIndex: match.index,
-            endIndex,
-            name: match[2]
-        });
     }
     if (modules.length <= 0) {
         return rsFile;
     }
     modules.reverse();
-    const rsFileDir = path.dirname(rsFilePath);
+    const rsFileDir1 = path.dirname(rsFilePath);
+    const rsFileDir2 = rsFilePath.replace(new RegExp(`\\${path.extname(rsFilePath)}$`, 'u'), '');
     let linkedRsFile = rsFile;
-    for (const {prefix, startIndex, endIndex, name} of modules) {
+    for (const {visibility, startIndex, endIndex, identifier, fileName} of modules) {
         const str1 = linkedRsFile.substring(0, startIndex);
         const str2 = linkedRsFile.substring(endIndex);
-        const rsDirPath = path.join(rsFileDir, name);
-        let rsFilePath = `${rsDirPath}.rs`;
-        const isValidRsDir = await fs.pathExists(rsDirPath) && (await fs.stat(rsDirPath)).isDirectory();
-        let isValidRsFile = await fs.pathExists(rsFilePath) && (await fs.stat(rsFilePath)).isFile();
+        let isValidRsDir, isValidRsFile, rsDirPath, rsFilePath;
+        for (const rsDirPath_ of [path.join(rsFileDir2, fileName), path.join(rsFileDir1, fileName)]) {
+            rsDirPath = rsDirPath_;
+            rsFilePath = `${rsDirPath}.rs`;
+            isValidRsDir = await fs.pathExists(rsDirPath) && (await fs.stat(rsDirPath)).isDirectory();
+            isValidRsFile = await fs.pathExists(rsFilePath) && (await fs.stat(rsFilePath)).isFile();
+            if (isValidRsDir || isValidRsFile) {
+                break;
+            }
+        }
         let rsFile;
-        if (isValidRsDir && isValidRsFile) {
-            throw new Error(`不能区分 ${name} 是文件模块，还是目录模块`);
-        } else if (isValidRsFile) {
+        if (isValidRsFile) {
             logInfo(chalk.blueBright(`内联模块文件：${rsFilePath}`));
             rsFile = await linkModules(rsFilePath);
         } else if (isValidRsDir) {
-            rsFilePath = path.join(rsFileDir, 'mod.rs');
+            rsFilePath = path.join(rsFileDir1, 'mod.rs');
             isValidRsFile = await fs.pathExists(rsFilePath) && (await fs.stat(rsFilePath)).isFile();
             if (isValidRsFile) {
                 logInfo(chalk.blueBright(`内联模块目录：${rsFilePath}`));
                 rsFile = await linkModules(rsFilePath);
             } else {
-                throw new Error(`在【模块目录 - ${rsFileDir}】内没有 mod.rs 文件`);
+                throw new Error(`在【模块目录 - ${rsFileDir1}】内没有 mod.rs 文件`);
             }
         }
-        linkedRsFile = `${str1}${[
-            `${prefix}mod ${name} {`,
-            rsFile.split('\n').map(line => `${prefix}${padLeft}${line}`).join('\n'),
-            '}'
+        linkedRsFile = `${str1.replace(/(?:^|\n)\s*#\[\s*path\s*=\s*"([^"]+)"\s*\]\s*$/u, '\n')}${[
+                `${visibility}mod ${identifier} {`,
+                rsFile.split('\n').map(line => `${visibility}${padLeft}${line}`).join('\n'),
+                '}'
         ].join('\n')}\n${str2}`;
     }
     return linkedRsFile;
